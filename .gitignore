@@ -1,0 +1,6 @@
+# Compiled binary
+gh-godo
+
+# Go build cache
+*.test
+*.out
