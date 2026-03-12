@@ -5,6 +5,7 @@
   // ── DOM refs ──────────────────────────────────────────────────
   const filePathInput = document.getElementById("filePath");
   const loadBtn       = document.getElementById("loadBtn");
+  const browseBtn     = document.getElementById("browseBtn");
   const fileStatus    = document.getElementById("fileStatus");
   const entryForm     = document.getElementById("entryForm");
   const formTitle     = document.getElementById("formTitle");
@@ -130,6 +131,23 @@
       renderRows([]);
     }
   }
+
+  // ── Event: Browse button ──────────────────────────────────────
+  browseBtn.addEventListener("click", async () => {
+    try {
+      const res = await fetch("/api/browse");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || res.statusText);
+      }
+      const data = await res.json();
+      if (data.path) {
+        filePathInput.value = data.path;
+      }
+    } catch (err) {
+      setStatus(fileStatus, `Browse failed: ${err.message}`);
+    }
+  });
 
   // ── Event: Load button ─────────────────────────────────────────
   loadBtn.addEventListener("click", async () => {
