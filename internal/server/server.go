@@ -11,6 +11,7 @@ import (
 	"strconv"
 
 	"github.com/KimHansenCubris/gh-godo/internal/excel"
+	"github.com/ncruces/zenity"
 )
 
 //go:embed static
@@ -30,6 +31,7 @@ func Start(addr string) error {
 	// API endpoints.
 	mux.HandleFunc("/api/rows", handleRows)
 	mux.HandleFunc("/api/rows/", handleRowByID)
+	mux.HandleFunc("/api/browse", handleBrowse)
 
 	return http.ListenAndServe(addr, mux)
 }
@@ -133,4 +135,32 @@ func handleRowByID(w http.ResponseWriter, r *http.Request) {
 	default:
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
 	}
+}
+
+// handleBrowse handles GET /api/browse – opens a native file-picker dialog and
+// returns the chosen path so the browser UI can populate the file path input.
+func handleBrowse(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
+	path, err := zenity.SelectFile(
+		zenity.Title("Select Excel Workbook"),
+		zenity.FileFilter{
+			Name:     "Excel files (*.xlsx)",
+			Patterns: []string{"*.xlsx"},
+		},
+	)
+	if err == zenity.ErrCanceled {
+		// User dismissed the dialog – return an empty path (not an error).
+		writeJSON(w, http.StatusOK, map[string]string{"path": ""})
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"path": path})
 }
